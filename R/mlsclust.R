@@ -212,29 +212,62 @@ mlsclust <- function(tre, amd, min_descendants=10, max_descendants=20e3, min_clu
 	}
 	
 	.get_comparison_sister_node <- function(node) {
+		# Get the immediate ancestor of the node.
 		imed_ancestor <- utils::tail(ancestors[[node]], 1)
+
+		# Get all children (sisters) of that ancestor.
 		sisters <- tre$edge[ tre$edge[,1] == imed_ancestor, 2 ]
-		comparison_node <- base::setdiff(sisters, node)
-		desc_tips_sisters <- lapply(1:length(sisters), function(tp) descendant_ids[[ sisters[[tp]] ]] )
-		names(desc_tips_sisters) <- lapply(1:length(desc_tips_sisters), function(tp) sisters[[tp]] )
 		
-		sts_tips_sisters <- lapply(1:length(desc_tips_sisters), function(tp) sts[ desc_tips_sisters[[tp]] ] )
-		names(sts_tips_sisters) <- lapply(1:length(sts_tips_sisters), function(tp) sisters[[ tp ]] )
-		
-		desc_tips_sisters_node <- unlist(unname(desc_tips_sisters[names(desc_tips_sisters) == node]))
-		desc_tips_sisters_control <- unlist(unname(desc_tips_sisters[names(desc_tips_sisters) == comparison_node]))
-		sts_tips_sisters_node <- unlist(unname(sts_tips_sisters[names(sts_tips_sisters) == node]))
-		sts_tips_sisters_control <- unlist(unname(sts_tips_sisters[names(sts_tips_sisters) == comparison_node]))
-		
-		res <- list()
-		if((length(desc_tips_sisters_node) >= min_descendants) && (length(desc_tips_sisters_control) >= min_descendants)) {
-			res <- list(sisters, comparison_node, desc_tips_sisters, sts_tips_sisters, desc_tips_sisters_node,	desc_tips_sisters_control, sts_tips_sisters_node, sts_tips_sisters_control)
-		}else {
-			res <- NULL
+		# If there are fewer than 2 children, there is no sister to compare.
+		if (length(sisters) < 2) {
+			return(NULL)
 		}
-		return(res)
+		
+		# Determine the sister node(s) (all children that are not equal to node)
+		comparison_node <- setdiff(sisters, node)
+		# If there is more than one sister, choose the first one.
+		if (length(comparison_node) > 1) {
+			comparison_node <- comparison_node[1]
+		}
+		
+		# Retrieve descendant tips for each sister.
+		desc_tips_sisters <- lapply(sisters, function(x) descendant_ids[[ x ]])
+		names(desc_tips_sisters) <- as.character(sisters)
+
+		# Retrieve the corresponding sample times for each sister's descendant tips.
+		sts_tips_sisters <- lapply(desc_tips_sisters, function(tips) sts[tips])
+		names(sts_tips_sisters) <- as.character(sisters)
+
+		# Convert node and comparison_node to character for consistent subsetting.
+		node_char <- as.character(node)
+		comp_char <- as.character(comparison_node)
+
+		# Check if names exist in our lists.
+		if (!(node_char %in% names(desc_tips_sisters)) || !(comp_char %in% names(desc_tips_sisters))) {
+			return(NULL)
+		}
+
+		# Get descendant tips and sample times for the node and its sister.
+		desc_tips_sisters_node <- desc_tips_sisters[[ node_char ]]
+		desc_tips_sisters_control <- desc_tips_sisters[[ comp_char ]]
+		sts_tips_sisters_node <- sts_tips_sisters[[ node_char ]]
+		sts_tips_sisters_control <- sts_tips_sisters[[ comp_char ]]
+
+		# Only return results if both groups have at least min_descendants tips.
+		if ((length(desc_tips_sisters_node) >= min_descendants) &&
+			(length(desc_tips_sisters_control) >= min_descendants)) {
+			return(list(sisters = sisters,
+						comparison_node = comparison_node,
+						desc_tips_sisters = desc_tips_sisters,
+						sts_tips_sisters = sts_tips_sisters,
+						desc_tips_sisters_node = desc_tips_sisters_node,
+						desc_tips_sisters_control = desc_tips_sisters_control,
+						sts_tips_sisters_node = sts_tips_sisters_node,
+						sts_tips_sisters_control = sts_tips_sisters_control))
+		} else {
+			return(NULL)
+		}
 	}
-	
 	
 	# ratio sizes function
 	.ratio_sizes_stat <- function(node_tips, sister_tips) {
