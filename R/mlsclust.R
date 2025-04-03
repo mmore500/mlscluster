@@ -381,7 +381,7 @@ mlsclust <- function(tre, amd, min_descendants=10, max_descendants=20e3, min_clu
 		md_its <- amd[ amd$sequence_name %in% comp_res[[6]], ]
 		
 		if( nrow(md_itn) == 0 | nrow(md_its) == 0 )
-			return(character(0))
+			return(NA)
 		
 		if(rm_seq_artifacts) {
 			vtab_node_freqs <- .tab_freqs(md_itn)
