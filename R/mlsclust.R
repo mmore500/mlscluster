@@ -422,7 +422,7 @@ mlsclust <- function(tre, amd, min_descendants=10, max_descendants=20e3, min_clu
 	
 	# Detect independent occurences of defining mutations (homoplasies) across different nodes
 	.find_homoplasies <- function(node_list, major_lineage_nodes) {
-		def_muts_nodes <- pbmcapply::pbmclapply(1:length(node_list), function(tp) {  .node_muts(node_list[[tp]]) }, mc.cores = ncpu)
+		def_muts_nodes <- pbmcapply::pbmclapply(1:length(node_list), function(tp) {  as.character(.node_muts(node_list[[tp]])) }, mc.cores = ncpu)
 		
 		names(def_muts_nodes) <- pbmcapply::pbmclapply( 1:length(node_list), function(tp) { node_list[[tp]] }, mc.cores=ncpu )
 		
