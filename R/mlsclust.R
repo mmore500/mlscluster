@@ -890,7 +890,11 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 	
 	stats_df_homopl2_freq_df[is.na(stats_df_homopl2_freq_df)] = ""
 	stats_df_homopl2_freq_df <- .annotate_n_homoplasies(stats_df_homopl2_freq_df)
-	stats_df_homopl2_freq_df$is_clustered <- 1
+	if (nrow(stats_df_homopl2_freq_df) != 0) {
+		stats_df_homopl2_freq_df$is_clustered <- 1
+	} else {
+		stats_df_homopl2_freq_df <- data.frame()
+	}
 	
 	stats_df_aadns2 <- .annotate_diff_aa_mut_same_site(homoplasies2_detect_df)
 	if(nrow(stats_df_aadns2) != 0) {
@@ -907,7 +911,11 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 	
 	stats_df_scpss2 <- .sanity_check_positively_selected_sites(stats_df_homopl2_freq_df)
 	stats_df_scpss2 <- stats_df_scpss2[, c(1:23)]
-	stats_df_scpss2$is_clustered <- 1
+	if (nrow(stats_df_scpss2) != 0) {
+		stats_df_scpss2$is_clustered <- 1
+	} else {
+		stats_df_scpss2 <- data.frame()
+	}
 	
 	if(nrow(stats_df_homopl2_freq_df) != 0) {
 		stats_df_homopl2_freq_df_cp <- stats_df_homopl2_freq_df %>%
@@ -996,17 +1004,33 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 	stats_df_homopl3_freq_df <- stats_df_homopl3_freq_df %>% dplyr::select(nodes_homopl, defining_mut, Freq_homopl, s_mut, s_mut_region_interest, n_mut, n_mut_region_interest, major_lineage)
 	stats_df_homopl3_freq_df[is.na(stats_df_homopl3_freq_df)] = ""
 	stats_df_homopl3_freq_df <- stats_df_homopl3_freq_df[base::order(stats_df_homopl3_freq_df$s_mut, stats_df_homopl3_freq_df$s_mut_region_interest, decreasing=TRUE),]
-	stats_df_homopl3_freq_df$is_clustered <- 0
+	if (nrow(stats_df_homopl3_freq_df) != 0) {
+		stats_df_homopl3_freq_df$is_clustered <- 0
+	} else {
+		stats_df_homopl3_freq_df <- data.frame()
+	}
 	
 	stats_df_aadns3 <- .annotate_diff_aa_mut_same_site(homoplasies3_not_detect_df)
-	stats_df_aadns3$is_clustered <- 0
+	if (nrow(stats_df_aadns3) != 0) {
+		stats_df_aadns3$is_clustered <- 0
+	} else {
+		stats_df_aadns3 <- data.frame()
+	}
 	
 	stats_df_aamw3 <- .annotate_adjacent_muts_window_s3(homoplasies3_not_detect_df)
-	stats_df_aamw3$is_clustered <- 0
+	if (nrow(stats_df_aamw3) != 0) {
+		stats_df_aamw3$is_clustered <- 0
+	} else {
+		stats_df_aamw3 <- data.frame()
+	}
 	
 	stats_df_scpss3 <- .sanity_check_positively_selected_sites(stats_df_homopl3_freq_df)
 	stats_df_scpss3 <- stats_df_scpss3[, c(1:9)]
-	stats_df_scpss3$is_clustered <- 0
+	if (nrow(stats_df_scpss3) != 0) {
+		stats_df_scpss3$is_clustered <- 0
+	} else {
+		stats_df_scpss3 <- data.frame()
+	}
 	rm(homoplasies3_not_detect_df); gc()
 	
 	# Join friendly dfs for statistical analysis
