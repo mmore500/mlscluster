@@ -34,14 +34,22 @@ stats_multiple_thresholds <- function(path_stats, pal_lineages = c("Alpha_B.1.1.
 	# Change period_threshold to match correct period and threshold (0.25, 0.5, 0.75, 1, 2, 3, 4, 5, 10, 25)
 	.change_ids <- function(df) {
 		for(i in 1:nrow(df)) {
-			if(df[[i,1]] %in% names(table_combs)) {
-				idx <- match(df[[i,1]],names(table_combs))
-				df[[i,1]] <- table_combs[idx]
+			tryCatch({
+			# First attempt: using double bracket indexing
+			if(df[[i, 1]] %in% names(table_combs)) {
+				idx <- match(df[[i, 1]], names(table_combs))
+				df[[i, 1]] <- table_combs[idx]
 			}
+			}, error = function(e) {
+			# If an error occurs, use single bracket indexing instead
+			if(df[i, 1] %in% names(table_combs)) {
+				idx <- match(df[i, 1], names(table_combs))
+				df[i, 1] <- table_combs[idx]
+			}
+			})
 		}
 		return(df)
 	}
-	
 	.plot_distr_freqs_spec_regions <- function(df,aa_change,remove_if_x_rows_period_thr=2, all_clust=FALSE) {
 		system(glue::glue("mkdir -p stat_results/{out_folder}/plot_mut_mean_freqs_{aa_change}_regions"))
 		if(all_clust) {
@@ -609,21 +617,25 @@ stats_multiple_thresholds <- function(path_stats, pal_lineages = c("Alpha_B.1.1.
 	sink(file = glue::glue("stat_results/{out_folder}/{out_poisson_file}"))
 	for(i in 1:length(path_thresholds)) {
 
-		poisson_models_syn[[i]] <- stats::glm(Freq_homopl ~ major_lineage + spec_regions + -1, data=joined_mut_sites_clustered_syn[[i]], na.action=stats::na.omit, family=stats::poisson(link = "log")) #genomic_index +s_mut_region_interest +syn + aa_length + indep_found_pos_selection
-		poisson_models_syn_ci[[i]] <- stats::confint(poisson_models_syn[[i]], level=0.95)
-		#print("Summary poisson (SYN): ")
-		#print(nrow(joined_mut_sites_clustered_syn[[i]]))
-		#print(summary(poisson_models_syn[[i]]))
-		#print("Summary poisson (SYN) CIs for coeffs: ")
-		#print(poisson_models_syn_ci[[i]])
+		tryCatch({
+			poisson_models_syn[[i]] <- stats::glm(Freq_homopl ~ major_lineage + spec_regions + -1, data=joined_mut_sites_clustered_syn[[i]], na.action=stats::na.omit, family=stats::poisson(link = "log")) #genomic_index +s_mut_region_interest +syn + aa_length + indep_found_pos_selection
+			poisson_models_syn_ci[[i]] <- stats::confint(poisson_models_syn[[i]], level=0.95)
+			#print("Summary poisson (SYN): ")
+			#print(nrow(joined_mut_sites_clustered_syn[[i]]))
+			#print(summary(poisson_models_syn[[i]]))
+			#print("Summary poisson (SYN) CIs for coeffs: ")
+			#print(poisson_models_syn_ci[[i]])
+		}, error=function(e){cat("ERROR :",conditionMessage(e), "\n")})
 
-		poisson_models_non_syn[[i]] <- stats::glm(Freq_homopl ~ major_lineage + spec_regions + indep_found_pos_selection + -1, data=joined_mut_sites_clustered_non_syn[[i]], na.action=stats::na.omit, family=stats::poisson(link = "log")) #genomic_index +s_mut_region_interest +syn + aa_length
-		poisson_models_non_syn_ci[[i]] <- stats::confint(poisson_models_non_syn[[i]], level=0.95)
-		print(glue::glue("Summary poisson regression (NON-SYN) for {path_thresholds[i]}%: "))
-		#print(nrow(joined_mut_sites_clustered_non_syn[[i]]))
-		print(summary(poisson_models_non_syn[[i]]))
-		# print("Summary poisson (NON-SYN) CIs for coeffs: ")
-		# print(poisson_models_non_syn_ci[[i]])
+		tryCatch({
+			poisson_models_non_syn[[i]] <- stats::glm(Freq_homopl ~ major_lineage + spec_regions + indep_found_pos_selection + -1, data=joined_mut_sites_clustered_non_syn[[i]], na.action=stats::na.omit, family=stats::poisson(link = "log")) #genomic_index +s_mut_region_interest +syn + aa_length
+			poisson_models_non_syn_ci[[i]] <- stats::confint(poisson_models_non_syn[[i]], level=0.95)
+			print(glue::glue("Summary poisson regression (NON-SYN) for {path_thresholds[i]}%: "))
+			#print(nrow(joined_mut_sites_clustered_non_syn[[i]]))
+			print(summary(poisson_models_non_syn[[i]]))
+			# print("Summary poisson (NON-SYN) CIs for coeffs: ")
+			# print(poisson_models_non_syn_ci[[i]])
+		}, error=function(e){cat("ERROR :",conditionMessage(e), "\n")})
 
 	}
 	sink(file = NULL)
@@ -636,20 +648,37 @@ stats_multiple_thresholds <- function(path_stats, pal_lineages = c("Alpha_B.1.1.
 	df_non_syn_clustered_homopl <- .change_ids(df_non_syn_clustered_homopl)
 
 	message("Genome-wide plots per genomic region:")
-	s13 <- .genomewide_plot(df_syn_clustered_homopl, mut_type="syn")
-	s9 <- .genomewide_plot(df_non_syn_clustered_homopl, mut_type="non-syn")
+	tryCatch({
+		s13 <- .genomewide_plot(df_syn_clustered_homopl, mut_type="syn")
+		s9 <- .genomewide_plot(df_non_syn_clustered_homopl, mut_type="non-syn")
+	}, error=function(e){
+		cat("ERROR :",conditionMessage(e), "\n")
+		s13 <- s9 <- NULL
+	})
 
 	message("Violin plots of frequencies by lineage and genomic region:")
-	.violin_boxplot_freq_variations(df_syn_clustered_homopl, mut_type="syn")
-	.violin_boxplot_freq_variations(df_non_syn_clustered_homopl, mut_type="non-syn")
+	tryCatch({
+		.violin_boxplot_freq_variations(df_syn_clustered_homopl, mut_type="syn")
+		.violin_boxplot_freq_variations(df_non_syn_clustered_homopl, mut_type="non-syn")
+	}, error=function(e){
+		cat("ERROR :",conditionMessage(e), "\n")
+	})
 
 	message("Stacked bar of unique sites under selection by lineage and genomic region:")
-	.stacked_bar_freqs(df_syn_clustered_homopl, mut_type="syn")
-	.stacked_bar_freqs(df_non_syn_clustered_homopl, mut_type="non-syn")
+	tryCatch({
+		.stacked_bar_freqs(df_syn_clustered_homopl, mut_type="syn")
+		.stacked_bar_freqs(df_non_syn_clustered_homopl, mut_type="non-syn")
+	}, error=function(e){
+		cat("ERROR :",conditionMessage(e), "\n")
+	})
 
 	message("Tables of unique homoplasies:")
-	.total_amount_unique_homoplasies(df_syn_clustered_homopl, mut_type="syn")
-	.total_amount_unique_homoplasies(df_non_syn_clustered_homopl, mut_type="non-syn")
+	tryCatch({
+		.total_amount_unique_homoplasies(df_syn_clustered_homopl, mut_type="syn")
+		.total_amount_unique_homoplasies(df_non_syn_clustered_homopl, mut_type="non-syn")
+	}, error=function(e){
+		cat("ERROR :",conditionMessage(e), "\n")
+	})
 
 	system(glue::glue("mkdir -p stat_results/{out_folder}/only_clustered_ordered_homopl/"))
 	# SYN
