@@ -826,8 +826,14 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 	# Return table with already described positively selected sites (https://observablehq.com/@spond/sars-cov-2-selection-countries) that should not appear here
 	.sanity_check_positively_selected_sites <- function(homopl_df) {
 		pos_sel_sites <- utils::read.csv(system.file("extdata", "positive_selected_sites_20221006.tsv", package="mlscluster"),sep="\t", header=T)
-		pos_sel_sites$prot_site <- paste0(pos_sel_sites$protein,":",pos_sel_sites$site) 
-		
+		# Ensure pos_sel_sites gets a prot_site column even if it's empty
+		if (nrow(pos_sel_sites) != 0) {
+			pos_sel_sites$prot_site <- paste0(pos_sel_sites$protein, ":", pos_sel_sites$site)
+		} else {
+			pos_sel_sites$prot_site <- character(0)
+		}
+
+		# Extract protein from defining_mut and convert to uppercase (fixing the typo)
 		homopl_df$protein <- sub("\\:.*", "", homopl_df$defining_mut)
 		homopl_df$protein <- toupper(homopl_df$prot)
 		
@@ -837,7 +843,13 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 		comm_coord[rgx_scpss != -1] <- stringr::str_sub( regmatches(homopl_df$defining_mut, rgx_scpss), 3, -2)
 		comm_coord_df <- as.data.frame(comm_coord); colnames(comm_coord_df) <- c("site")
 		homopl_df <- cbind(homopl_df, comm_coord_df)
-		homopl_df$prot_site <- paste0(homopl_df$protein,":",homopl_df$site)
+
+		# Create prot_site column in homopl_df regardless of whether it's empty
+		if (nrow(homopl_df) != 0) {
+			homopl_df$prot_site <- paste0(homopl_df$protein, ":", homopl_df$site)
+		} else {
+			homopl_df$prot_site <- character(0)
+		}
 		
 		homopl_df_pss <- dplyr::inner_join(homopl_df, pos_sel_sites, by="prot_site")
 		
