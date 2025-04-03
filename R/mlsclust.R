@@ -1106,16 +1106,20 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 		"n_mut_region_interest", "is_clustered"
 	)))
 	stats_df_scpss_join <- data.table::rbindlist(list(stats_df_scpss2_cp, stats_df_scpss3), fill=TRUE)
-	
+
 	clustered_df$indep_found_pos_selection <- ifelse(clustered_df$defining_mut %in% stats_df_scpss_join$defining_mut, "yes", "no")
 	rm(stats_df_scpss2_cp, stats_df_scpss_join); gc()
 	# remove duplicates coming from different homoplasy categories
 	clustered_df <- clustered_df[!duplicated(clustered_df$defining_mut)]
-	clustered_contingency_tab <- stats::xtabs(Freq_homopl ~ defining_mut+is_clustered, data=clustered_df) #id_homopl_cat
-	clustered_contingency_tab <- as.data.frame(clustered_contingency_tab)
-	clustered_contingency_tab <- clustered_contingency_tab[as.integer(clustered_contingency_tab$Freq) > 0,]
 	utils::write.csv(clustered_df, file=glue::glue('{output_dir}/clustered_all_df.csv'), quote=FALSE, row.names=FALSE)
-	utils::write.csv(clustered_contingency_tab, file=glue::glue('{output_dir}/clustered_contingency_df.csv'), quote=FALSE, row.names=FALSE)
+	if (nrow(clustered_df) != 0) {
+		clustered_contingency_tab <- stats::xtabs(Freq_homopl ~ defining_mut+is_clustered, data=clustered_df) #id_homopl_cat
+		clustered_contingency_tab <- as.data.frame(clustered_contingency_tab)
+		clustered_contingency_tab <- clustered_contingency_tab[as.integer(clustered_contingency_tab$Freq) > 0,]
+		utils::write.csv(clustered_contingency_tab, file=glue::glue('{output_dir}/clustered_contingency_df.csv'), quote=FALSE, row.names=FALSE)
+	} else {
+		clustered_contingency_tab <- data.frame()
+	}
 	
 	message(glue::glue("Nodes matching threshold {ifelse(threshold_keep_lower, '<', '>')} {quantile_threshold_ratio_sizes} quantile of ratio sizes: {nrow(stats_df_rs)}"))
 	message(glue::glue("Nodes matching threshold {ifelse(threshold_keep_lower, '<', '>')} {quantile_threshold_ratio_persist_time} quantile of ratio persistence time: {nrow(stats_df_rpt)}"))
