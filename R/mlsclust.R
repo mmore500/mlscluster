@@ -895,10 +895,14 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 	stats_df_aadns2 <- .annotate_diff_aa_mut_same_site(homoplasies2_detect_df)
 	if(nrow(stats_df_aadns2) != 0) {
 		stats_df_aadns2$is_clustered <- 1
+	} else {
+		stats_df_aadns2 <- data.frame()
 	}
 	stats_df_aamw2 <- .annotate_adjacent_muts_window_s3(homoplasies2_detect_df)
 	if(nrow(stats_df_aamw2) != 0) {
 		stats_df_aamw2$is_clustered <- 1
+	} else {
+		stats_df_aamw2 <- data.frame()
 	}
 	
 	stats_df_scpss2 <- .sanity_check_positively_selected_sites(stats_df_homopl2_freq_df)
@@ -906,29 +910,61 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 	stats_df_scpss2$is_clustered <- 1
 	
 	if(nrow(stats_df_homopl2_freq_df) != 0) {
-		stats_df_homopl2_freq_df_cp <- stats_df_homopl2_freq_df %>% dplyr::select(nodes_homopl,defining_mut,Freq_homopl,is_clustered,s_mut_region_interest,n_mut_region_interest, major_lineage) #id_homopl_cat
+		stats_df_homopl2_freq_df_cp <- stats_df_homopl2_freq_df %>%
+		dplyr::select(nodes_homopl, defining_mut, Freq_homopl, is_clustered,
+						s_mut_region_interest, n_mut_region_interest, major_lineage)
 		stats_df_homopl2_freq_df_cp <- stats_df_homopl2_freq_df_cp[!duplicated(stats_df_homopl2_freq_df_cp$defining_mut),]
-	}else {
-		stats_df_homopl2_freq_df_cp <- data.frame(nodes_homopl=c(NA),defining_mut=c(NA),Freq_homopl=c(NA),is_clustered=c(NA),s_mut_region_interest=c(NA),n_mut_region_interest=c(NA), major_lineage=c(NA))
+	} else {
+		stats_df_homopl2_freq_df_cp <- data.frame(
+		nodes_homopl = NA,
+		defining_mut = NA,
+		Freq_homopl = NA,
+		is_clustered = NA,
+		s_mut_region_interest = NA,
+		n_mut_region_interest = NA,
+		major_lineage = NA
+		)
 	}
 	
 	if(nrow(stats_df_aadns2) != 0) {
-		stats_df_aadns2_cp <- stats_df_aadns2 %>% dplyr::select(nodes_homopl,defining_mut,Freq_homopl.x,is_clustered, major_lineage) #id_homopl_cat
+		stats_df_aadns2_cp <- stats_df_aadns2 %>%
+		dplyr::select(nodes_homopl, defining_mut, Freq_homopl.x, is_clustered, major_lineage)
 		stats_df_aadns2_cp <- stats_df_aadns2_cp[!duplicated(stats_df_aadns2_cp$defining_mut),]
 		stats_df_aadns2_cp$s_mut_region_interest <- ""
 		stats_df_aadns2_cp$n_mut_region_interest <- ""
-		colnames(stats_df_aadns2_cp) <- c("nodes_homopl","defining_mut","Freq_homopl","is_clustered","major_lineage","s_mut_region_interest","n_mut_region_interest") #"id_homopl_cat"
+		colnames(stats_df_aadns2_cp) <- c("nodes_homopl", "defining_mut", "Freq_homopl",
+										"is_clustered", "major_lineage",
+										"s_mut_region_interest", "n_mut_region_interest")
+	} else {
+		stats_df_aadns2_cp <- data.frame(
+		nodes_homopl = "",
+		defining_mut = "",
+		Freq_homopl = "",
+		is_clustered = "",
+		major_lineage = "",
+		s_mut_region_interest = "",
+		n_mut_region_interest = ""
+		)
 	}
-	
-	stats_df_aamw2_cp <- data.frame()
+
 	if(nrow(stats_df_aamw2) != 0) {
 		stats_df_aamw2_cp <- stats_df_aamw2[, c(1:3,8,4)]
 		stats_df_aamw2_cp <- stats_df_aamw2_cp[!duplicated(stats_df_aamw2_cp$defining_mut),]
 		stats_df_aamw2_cp$s_mut_region_interest <- ""
 		stats_df_aamw2_cp$n_mut_region_interest <- ""
-		colnames(stats_df_aamw2_cp) <- c("nodes_homopl","defining_mut","Freq_homopl","is_clustered","major_lineage","s_mut_region_interest","n_mut_region_interest") #"id_homopl_cat"
-	}else {
-		stats_df_aamw2_cp <- data.frame(nodes_homopl=c(""),defining_mut=c(""),Freq_homopl.x=c(""),is_clustered=c(""),major_lineage=c(""),s_mut_region_interest=c(""),n_mut_region_interest=c(""))
+		colnames(stats_df_aamw2_cp) <- c("nodes_homopl", "defining_mut", "Freq_homopl",
+										"is_clustered", "major_lineage",
+										"s_mut_region_interest", "n_mut_region_interest")
+	} else {
+		stats_df_aamw2_cp <- data.frame(
+		nodes_homopl = "",
+		defining_mut = "",
+		Freq_homopl = "",
+		is_clustered = "",
+		major_lineage = "",
+		s_mut_region_interest = "",
+		n_mut_region_interest = ""
+		)
 	}
 	
 	utils::write.csv(stats_df_homopl2_freq_df, file=glue::glue('{output_dir}/homoplasy_DETAILS_detect_stats.csv'), quote=FALSE, row.names=FALSE)
@@ -940,8 +976,9 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 	
 	# Homoplasies (node NOT detected by stat)
 	homoplasies3_not_detect <- base::setdiff(tgt_nodes, stats_df_union$node)
-	homoplasies3_not_detect <- data.frame(homoplasies3_not_detect); colnames(homoplasies3_not_detect) <- c("node")
-	homoplasies3_not_detect_df <- homoplasies3_not_detect	%>% dplyr::left_join(homoplasies, by="node")
+	homoplasies3_not_detect <- data.frame(homoplasies3_not_detect)
+	colnames(homoplasies3_not_detect) <- c("node")
+	homoplasies3_not_detect_df <- homoplasies3_not_detect %>% dplyr::left_join(homoplasies, by="node")
 	rm(homoplasies3_not_detect); gc()
 	homoplasies3_not_detect_df <- stats::na.omit(homoplasies3_not_detect_df)
 	homoplasies3_not_detect_df <- .remove_known_problematic_sites(homoplasies3_not_detect_df)
