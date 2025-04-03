@@ -922,8 +922,8 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 	}
 	
 	stats_df_scpss2 <- .sanity_check_positively_selected_sites(stats_df_homopl2_freq_df)
-	stats_df_scpss2 <- stats_df_scpss2[, c(1:23)]
 	if (nrow(stats_df_scpss2) != 0) {
+		stats_df_scpss2 <- stats_df_scpss2[, c(1:23)]
 		stats_df_scpss2$is_clustered <- 1
 	} else {
 		stats_df_scpss2 <- data.frame()
@@ -1037,8 +1037,8 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 	}
 	
 	stats_df_scpss3 <- .sanity_check_positively_selected_sites(stats_df_homopl3_freq_df)
-	stats_df_scpss3 <- stats_df_scpss3[, c(1:9)]
 	if (nrow(stats_df_scpss3) != 0) {
+		stats_df_scpss3 <- stats_df_scpss3[, c(1:9)]
 		stats_df_scpss3$is_clustered <- 0
 	} else {
 		stats_df_scpss3 <- data.frame()
@@ -1060,6 +1060,8 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 		stats_df_aadns3_cp$s_mut_region_interest <- ""
 		stats_df_aadns3_cp$n_mut_region_interest <- ""
 		colnames(stats_df_aadns3_cp) <-  c("nodes_homopl","defining_mut","Freq_homopl","is_clustered","major_lineage","s_mut_region_interest","n_mut_region_interest") #"id_homopl_cat"
+	} else {
+		stats_df_aadns3_cp <- data.frame(nodes_homopl=c(NA),defining_mut=c(NA),Freq_homopl=c(NA),is_clustered=c(NA),major_lineage=c(NA),s_mut_region_interest=c(NA),n_mut_region_interest=c(NA))
 	}
 	
 	if(nrow(stats_df_aamw3) != 0) {
@@ -1068,6 +1070,8 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 		stats_df_aamw3_cp$s_mut_region_interest <- ""
 		stats_df_aamw3_cp$n_mut_region_interest <- ""
 		colnames(stats_df_aamw3_cp) <- c("nodes_homopl","defining_mut","Freq_homopl","is_clustered","major_lineage","s_mut_region_interest","n_mut_region_interest") #"id_homopl_cat"
+	} else {
+		stats_df_aamw3_cp <- data.frame(nodes_homopl=c(NA),defining_mut=c(NA),Freq_homopl=c(NA),is_clustered=c(NA),major_lineage=c(NA),s_mut_region_interest=c(NA),n_mut_region_interest=c(NA))
 	}
 	
 	utils::write.csv(stats_df_homopl3_freq_df, file=glue::glue('{output_dir}/homoplasy_DETAILS_NOT_detect_stats.csv'), quote=FALSE, row.names=FALSE)
@@ -1084,12 +1088,23 @@ run_diff_thresholds <- function(stats_df_unfilt, tgt_nodes, homoplasies, output_
 	clustered_df$protein <- toupper(clustered_df$prot)
 	clustered_df <- clustered_df %>% dplyr::inner_join(prot_lengths, by="protein")
 	clustered_df$syn_non_syn <- ifelse(clustered_df$protein == "SYNSNP", "syn", "non-syn")
-	clustered_df <- clustered_df %>% dplyr::select(defining_mut,major_lineage,Freq_homopl,nodes_homopl,is_clustered,syn_non_syn,s_mut_region_interest,n_mut_region_interest,protein,aa_length)
+	clustered_df <- clustered_df %>%
+    dplyr::select(dplyr::any_of(c(
+		"defining_mut", "major_lineage", "Freq_homopl",
+        "nodes_homopl", "is_clustered", "syn_non_syn",
+        "s_mut_region_interest", "n_mut_region_interest",
+		"protein", "aa_length"
+	)))
 	clustered_df[clustered_df == ""] <- NA
 	
 	# Make known positively selection dfs compatible to create column stating whether this was independently found under selection
 	stats_df_scpss2_cp <- stats_df_scpss2[!duplicated(stats_df_scpss2$defining_mut),]
-	stats_df_scpss2_cp <- stats_df_scpss2_cp %>% dplyr::select(nodes_homopl,defining_mut,major_lineage,Freq_homopl,s_mut_region_interest,n_mut_region_interest,is_clustered) #id_homopl_cat,s_mut
+	stats_df_scpss2_cp <- stats_df_scpss2_cp %>%
+	dplyr::select(dplyr::any_of(c(
+		"nodes_homopl", "defining_mut", "major_lineage",
+		"Freq_homopl", "s_mut_region_interest",
+		"n_mut_region_interest", "is_clustered"
+	)))
 	stats_df_scpss_join <- data.table::rbindlist(list(stats_df_scpss2_cp, stats_df_scpss3), fill=TRUE)
 	
 	clustered_df$indep_found_pos_selection <- ifelse(clustered_df$defining_mut %in% stats_df_scpss_join$defining_mut, "yes", "no")
